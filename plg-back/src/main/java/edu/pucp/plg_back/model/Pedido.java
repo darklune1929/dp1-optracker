@@ -21,13 +21,28 @@ import lombok.AllArgsConstructor;
 public class Pedido {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     private String clienteId;
     private Integer volumen;
-    private LocalDateTime fechaPedido;
-    private LocalDateTime fechaLimiteEntrega;
     private Integer posX;
     private Integer posY;
+    private LocalDateTime fechaPedido;
+    private LocalDateTime fechaLimiteEntrega;
 
+    public Pedido(Integer id,
+            String clienteId,
+            Integer volumen,
+            Integer posX,
+            Integer posY,
+            LocalDateTime fechaPedido,
+            Integer horasLimite) {
+        this.id = id;
+        this.clienteId = clienteId;
+        this.volumen = volumen;
+        this.posX = posX;
+        this.posY = posY;
+        this.fechaPedido = fechaPedido;
+        this.fechaLimiteEntrega = fechaPedido.plusHours(horasLimite);
+    }
 }
