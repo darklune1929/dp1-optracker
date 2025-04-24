@@ -122,29 +122,4 @@ public class PlgBackApplication {
 		};
 	}
 
-	// @Bean
-	// CommandLineRunner pruebaGA(AlgoGenPlanificador ga,
-	// AntColonyPlanificador aco) {
-	// return args -> {
-	// // flota demo
-	// Camion td01 =
-	// Camion.builder().codigo("TD01").capacidad(5).velocidad(50).build();
-	// Camion tc01 =
-	// Camion.builder().codigo("TC01").capacidad(10).velocidad(50).build();
-	// List<Camion> flota = List.of(td01, tc01);
-
-	// // pedidos demo (coordenadas arbitrarias)
-	// List<Pedido> pedidos = List.of(
-	// new Pedido(1, "c-201", 4, 40, 10, null, null),
-	// new Pedido(2, "c-202", 3, 22, 34, null, null),
-	// new Pedido(3, "c-203", 5, 17, 25, null, null),
-	// new Pedido(4, "c-204", 2, 60, 5, null, null));
-
-	// System.out.println("=== Ant Colony ===");
-	// aco.planificar(flota, pedidos).forEach(r -> System.out.println(r.getRuta()));
-
-	// System.out.println("\n=== Genetic Algorithm ===");
-	// ga.planificar(flota, pedidos).forEach(r -> System.out.println(r.getRuta()));
-	// };
-	// }
 }
