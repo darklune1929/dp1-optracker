@@ -9,8 +9,8 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @Primary
@@ -19,7 +19,8 @@ public class ACOPlanificador implements Planificador {
 
     private final ACOParams cfg = ACOParams.builder().build();
     private final Pathfinder pathfinder; // injected
-    private final double DEADLINE_PENALTY = 1_000_000.0; // penaliza rutas que no cumplen con la fecha de entrega
+    // private final double DEADLINE_PENALTY = 1_000_000.0; // penaliza rutas que no
+    // cumplen con la fecha de entrega
 
     // asumimos que el mapa es proveido o creado, con bloqueos
     // por simplicidad, usamos uno por defecto
@@ -134,7 +135,7 @@ public class ACOPlanificador implements Planificador {
 
             // --- construir tours ---
             for (int k = 0; k < cfg.getNAnts(); k++) {
-                boolean[] visited = new boolean[n];
+
                 int[] tour = buildAntTour(n, tau, dist, rnd);
                 antsTours.add(tour);
 
@@ -207,7 +208,7 @@ public class ACOPlanificador implements Planificador {
 
         // calcular horas de inicio y fin
         LocalDateTime startTime = camion.getFechaInicio() != null
-                ? camion.getFechaInicio().toInstant().atZone(camion.getZonaHoraria()).toLocalDateTime()
+                ? camion.getFechaInicio().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
                 : LocalDateTime.now(); // default start time
 
         double minutos = (bestLen / camion.getVelocidad()) * 60; // km/h → min
@@ -308,7 +309,7 @@ public class ACOPlanificador implements Planificador {
 
         double currentLength = 0.0;
         LocalDateTime currentTime = camion.getFechaInicio() != null
-                ? camion.getFechaInicio().toInstant().atZone(camion.getZonaHoraria()).toLocalDateTime()
+                ? camion.getFechaInicio().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
                 : LocalDateTime.now(); // default start time
 
         boolean deadlineMet = true; // flag para verificar si se cumplen los deadlines
