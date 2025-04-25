@@ -1,4 +1,4 @@
-// AlgoGenPlanificador.java
+// GAPlanificador.java
 package edu.pucp.plg_back.service.impl;
 
 import edu.pucp.plg_back.model.*;
@@ -12,7 +12,7 @@ import java.util.*;
 /** GA sencillo VRP = asignación FCFS + GA-TSP por camión */
 @Service
 @RequiredArgsConstructor
-public class AlgoGenPlanificador implements Planificador {
+public class GAPlanificador implements Planificador {
 
     private final GAParams cfg = GAParams.builder().build();
     private final Random rnd = new Random();
