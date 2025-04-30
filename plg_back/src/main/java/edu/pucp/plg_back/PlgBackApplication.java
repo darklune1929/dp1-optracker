@@ -135,12 +135,14 @@ public class PlgBackApplication {
 
 						// Se tranforma los dias, horas y minutos encontrados a LocalDate
 						LocalDateTime fechaPedido = LocalDateTime.of(añoLectura, mesLectura, dia, hora, minuto);
+						System.out.println(fechaPedido);
 
 						// Se suma la fecha del pedido con la hora limite
 						LocalDateTime fechaLimiteEntrega = fechaPedido.plus(horasLimite, ChronoUnit.HOURS);
 
 						// Añadir el pedido a la lista
-						pedidos.add(new Pedido(dia, idCliente, volumen, posX, posY, fechaPedido, fechaLimiteEntrega));
+						pedidos.add(new Pedido(pedidos.size() + 1, idCliente, volumen, posX, posY, fechaPedido,
+								fechaLimiteEntrega));
 
 					} else {
 						System.err.println("Línea con formato incorrecto: " + linea);
