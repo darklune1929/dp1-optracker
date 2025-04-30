@@ -1,5 +1,13 @@
 package edu.pucp.plg_back;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.File;
+import java.io.IOException;
+import java.util.regex.Matcher;
+import java.time.temporal.ChronoUnit;
+import java.util.regex.Pattern;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -14,9 +22,9 @@ import org.springframework.context.annotation.Bean;
 import edu.pucp.plg_back.model.Camion;
 import edu.pucp.plg_back.model.Pedido;
 import edu.pucp.plg_back.model.Ruta;
+import edu.pucp.plg_back.service.impl.ACOPlanificador;
 // import edu.pucp.plg_back.service.Planificador; // Keep if needed elsewhere
 import edu.pucp.plg_back.service.impl.GAPlanificador;
-import edu.pucp.plg_back.service.impl.ACOPlanificador;
 
 @SpringBootApplication(exclude = DataSourceAutoConfiguration.class)
 public class PlgBackApplication {
@@ -88,40 +96,65 @@ public class PlgBackApplication {
 
 			// --- Pedidos (Coordenadas dentro 70x50, Plazo >= 4 horas) ---
 			List<Pedido> pedidos = new ArrayList<>();
-			// Pedidos con diferentes urgencias y ubicaciones
-			// Plazo mínimo 4 horas (240 minutos)
 
-			// Pedido 1: Urgente, cerca del depot (12,8)
-			pedidos.add(new Pedido(1, "C001", 8, 20, 15, now.minusHours(1), now.plusHours(4))); // Pedido hace 1h, vence
-																								// en 4h
-			// Pedido 2: Volumen medio, zona intermedia
-			pedidos.add(new Pedido(2, "C002", 12, 40, 30, now.minusMinutes(30), now.plusHours(5))); // Pedido hace 30m,
-																									// vence en 5h
-			// Pedido 3: Pequeño, lejos
-			pedidos.add(new Pedido(3, "C003", 4, 65, 45, now, now.plusHours(6))); // Pedido ahora, vence en 6h
-			// Pedido 4: Grande, relativamente cerca
-			pedidos.add(new Pedido(4, "C004", 20, 30, 10, now.minusHours(2), now.plusHours(4).plusMinutes(30))); // Pedido
-																													// hace
-																													// 2h,
-																													// vence
-																													// en
-																													// 4.5h
-			// Pedido 5: Volumen medio, otra zona
-			pedidos.add(new Pedido(5, "C005", 10, 50, 20, now, now.plusHours(7))); // Pedido ahora, vence en 7h
-			// Pedido 6: Pequeño, esquina lejana
-			pedidos.add(new Pedido(6, "C006", 3, 68, 48, now.minusDays(1), now.plusHours(8))); // Pedido ayer, vence en
-																								// 8h
-			// Pedido 7: Grande, otra esquina
-			pedidos.add(new Pedido(7, "C007", 22, 5, 45, now, now.plusHours(8))); // Pedido ahora, vence en 8h
-			// Pedido 8: Cerca del Almacén Norte (42, 42)
-			pedidos.add(new Pedido(8, "C008", 7, 40, 40, now.minusHours(3), now.plusHours(5))); // Pedido hace 3h, vence
-																								// en 5h
-			// Pedido 9: Cerca del Almacén Este (63, 3)
-			pedidos.add(new Pedido(9, "C009", 9, 60, 5, now, now.plusHours(6))); // Pedido ahora, vence en 6h
-			// Pedido 10: Otro pedido
-			pedidos.add(new Pedido(10, "C010", 14, 25, 25, now.minusMinutes(15), now.plusHours(4))); // Pedido hace 15m,
-																										// vence en 4h
+			// Inicializador del año y mes de los pedidos
+			int añoLectura = 2025;
+			int mesLectura = 1;
+			String nombreArchivo = String.format("ventas%d%02d.txt", añoLectura, mesLectura);
+			String routeArchivo = "\\data\\pedidos\\" + nombreArchivo;
+			String filePath = new File("").getAbsolutePath();
+			filePath = filePath + routeArchivo;
+			System.out.println("Ruta ecnontrada: " + filePath);
+			String linea = "";
 
+			// Expresión regular para parsear cada línea del archivo
+			String regex = "(\\d+)d(\\d+)h(\\d+)m:(\\d+),(\\d+),c-(\\d+),(\\d+)m3,(\\d+)h";
+			Pattern pattern = Pattern.compile(regex);
+			try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+				while ((linea = br.readLine()) != null) {
+					Matcher matcher = pattern.matcher(linea);
+					if (pedidos.size() == 10) {
+						if (mesLectura == 12) {
+							añoLectura++;
+							mesLectura = 1;
+						} else {
+							mesLectura++;
+						}
+						break;
+					}
+					if (matcher.matches()) {
+						// Capturar los grupos de la expresión regular
+						int dia = Integer.parseInt(matcher.group(1));
+						int hora = Integer.parseInt(matcher.group(2));
+						int minuto = Integer.parseInt(matcher.group(3));
+						int posX = Integer.parseInt(matcher.group(4));
+						int posY = Integer.parseInt(matcher.group(5));
+						String idCliente = "c-" + matcher.group(6);
+						int volumen = Integer.parseInt(matcher.group(7));
+						int horasLimite = Integer.parseInt(matcher.group(8));
+
+						// Se tranforma los dias, horas y minutos encontrados a LocalDate
+						LocalDateTime fechaPedido = LocalDateTime.of(añoLectura, mesLectura, dia, hora, minuto);
+
+						// Se suma la fecha del pedido con la hora limite
+						LocalDateTime fechaLimiteEntrega = fechaPedido.plus(horasLimite, ChronoUnit.HOURS);
+
+						// Añadir el pedido a la lista
+						pedidos.add(new Pedido(dia, idCliente, volumen, posX, posY, fechaPedido, fechaLimiteEntrega));
+
+					} else {
+						System.err.println("Línea con formato incorrecto: " + linea);
+					}
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.err.println("Error al leer el archivo: " + nombreArchivo);
+			} catch (NumberFormatException e) {
+				e.printStackTrace();
+				System.err.println("Error al parsear número en la línea: " + linea);
+			}
+
+			// ---------------------------------------------------
 			System.out.println("\n--- Pedidos Definidos ---");
 			System.out.println("Total pedidos: " + pedidos.size());
 			pedidos.forEach(p -> System.out.printf(
