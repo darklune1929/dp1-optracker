@@ -47,7 +47,10 @@ public class PlgBackApplication {
 			List<Camion> flota = new ArrayList<>();
 			// Set a start time for trucks (e.g., beginning of shift 8:00 AM)
 			Calendar startCal = Calendar.getInstance();
-			startCal.set(Calendar.HOUR_OF_DAY, 8);
+			startCal.set(Calendar.YEAR, 2025);
+			startCal.set(Calendar.MONTH, Calendar.JANUARY); // Enero es 0 en Calendar
+			startCal.set(Calendar.DAY_OF_MONTH, 1);
+			startCal.set(Calendar.HOUR_OF_DAY, 0);
 			startCal.set(Calendar.MINUTE, 0);
 			startCal.set(Calendar.SECOND, 0);
 			startCal.set(Calendar.MILLISECOND, 0);
@@ -104,7 +107,6 @@ public class PlgBackApplication {
 			String routeArchivo = "\\data\\pedidos\\" + nombreArchivo;
 			String filePath = new File("").getAbsolutePath();
 			filePath = filePath + routeArchivo;
-			System.out.println("Ruta ecnontrada: " + filePath);
 			String linea = "";
 
 			// Expresión regular para parsear cada línea del archivo
@@ -113,7 +115,7 @@ public class PlgBackApplication {
 			try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
 				while ((linea = br.readLine()) != null) {
 					Matcher matcher = pattern.matcher(linea);
-					if (pedidos.size() == 10) {
+					if (pedidos.size() == 15) {
 						if (mesLectura == 12) {
 							añoLectura++;
 							mesLectura = 1;
@@ -135,7 +137,6 @@ public class PlgBackApplication {
 
 						// Se tranforma los dias, horas y minutos encontrados a LocalDate
 						LocalDateTime fechaPedido = LocalDateTime.of(añoLectura, mesLectura, dia, hora, minuto);
-						System.out.println(fechaPedido);
 
 						// Se suma la fecha del pedido con la hora limite
 						LocalDateTime fechaLimiteEntrega = fechaPedido.plus(horasLimite, ChronoUnit.HOURS);
