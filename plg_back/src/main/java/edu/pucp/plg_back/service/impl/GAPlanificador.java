@@ -430,4 +430,13 @@ public class GAPlanificador implements Planificador {
                         }));
         return map;
     }
+
+    // ---Seteo de parametros GA para el diseño de experimentos---
+    public void setParametrosGA(int popSize, int nGenerations, double crossoverProb,
+            double mutationProb) {
+        this.cfg.setPopSize(popSize);
+        this.cfg.setNGenerations(nGenerations);
+        this.cfg.setCrossoverProb(crossoverProb);
+        this.cfg.setMutationProb(mutationProb);
+    }
 }

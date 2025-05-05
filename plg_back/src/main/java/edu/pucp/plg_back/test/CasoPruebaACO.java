@@ -49,7 +49,7 @@ public class CasoPruebaACO {
                     .rho(r)
                     .build();
         }
-        System.out.println("Combinaciones generadas:");
+        System.out.println("Combinaciones ACO generadas:");
         for (int i = 0; i < combinacionACO.length; i++) {
             CombinacionACO combinacion = combinacionACO[i];
             System.out.printf("Combinación %d: alpha=%.2f, beta=%.2f, rho=%.2f, nAnts=%d, nIter=%d\n",

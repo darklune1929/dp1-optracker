@@ -84,12 +84,19 @@ public class PruebasExperimentos {
                                 .alpha2(1.5).beta1(2).beta2(4).rho1(0.3).rho2(0.7).build();
                 casosPruebaACO.generarCombinaciones();
 
+                CasoPruebaGA casosPruebaGA = new CasoPruebaGA();
+                casosPruebaGA = CasoPruebaGA.builder().popSize1(60).popSize2(100).nGenerations1(300).nGenerations2(500)
+                                .crossoverProb1(0.7).crossoverProb2(0.9).mutationProb1(0.05).mutationProb2(0.15)
+                                .build();
+                casosPruebaGA.generarCombinaciones();
+
                 // Variables para las iteraciones de pruebas
-                int resultadoNumero = 0;
-                int pedidosLeidos = 0;
-                double GLPPedido = 0.0;
-                int contadorACO = 0;
-                int contadorGA = 0;
+                int bloquesPedidosMaximo = 10  ; // Máximo de bloques de pedidos a procesar
+                int bloquesPedidos = 0; // Conteo de bloques de pedidos procesados
+                int pedidosLeidos = 0; // Contador de pedidos leídos
+                double GLPPedido = 0.0; // Variable que controla el GLP total de los pedidos del bloque. Previene que
+                                        // asigne mayor GLP que el de la flota (200)
+                boolean terminarExperimento = false; // Variable para controlar el fin del experimento
 
                 // Eliminar archivos de resultados anteriores
                 String filepathDeleteACO = new File("").getAbsolutePath() + "\\data\\resultados\\resultadosACO.txt";
@@ -103,7 +110,7 @@ public class PruebasExperimentos {
                         archivoResultadosDeleteGA.delete();
                 }
 
-                // Ruta del directorio donde están los archivos de pedidos
+                // Ruta del directorio donde están los archivos de pedidos a leer
                 String directorioPedidos = new File("").getAbsolutePath() +
                                 "\\data\\pedidos";
 
@@ -151,54 +158,98 @@ public class PruebasExperimentos {
                                                 // Calcular el GLP total de los pedidos
                                                 GLPPedido = GLPPedido + volumen;
                                                 pedidosLeidos++;
-                                                if (pedidosLeidos >= 5000)
-                                                        break; // Limitar el número de pedidos a 500
-                                                if (GLPPedido >= 200) { // Límite de GLP de nuestra flota. Aca detenmos
-                                                                        // la lectura y
-                                                                        // planificamos
+                                                if (pedidosLeidos >= 5000) {
+                                                        terminarExperimento = true; // Terminar el experimento
+                                                        break; // Limitar el número de pedidos a 5000. Por lo general
+                                                               // no se llega a este límite ya que el número de bloques
+                                                               // suele ser el limitante
+                                                }
+
+                                                // Si se llega al límite de GLP de la flota, se planifica y se reinicia
+                                                // el GLP total
+                                                if (GLPPedido >= 200) {
                                                         GLPPedido = 0.0; // Reiniciar el GLP total
-                                                        aco.setParametrosACO(
-                                                                        casosPruebaACO.combinacionACO[contadorACO]
-                                                                                        .getAlpha(),
-                                                                        casosPruebaACO.combinacionACO[contadorACO]
-                                                                                        .getBeta(),
-                                                                        casosPruebaACO.combinacionACO[contadorACO]
-                                                                                        .getRho(),
-                                                                        casosPruebaACO.combinacionACO[contadorACO]
-                                                                                        .getNAnts(),
-                                                                        casosPruebaACO.combinacionACO[contadorACO]
-                                                                                        .getNIter()); // Actualizar
-                                                                                                      // parámetros ACO
-                                                        // --- Planificación con Ant Colony Optimization ---
-                                                        long startTimeACO = System.currentTimeMillis();
-                                                        // Crear copias para evitar efectos secundarios entre algoritmos
-                                                        List<Camion> flotaACO = new ArrayList<>();
-                                                        flota.forEach(c -> flotaACO.add(Camion.builder()
-                                                                        .codigo(c.getCodigo())
-                                                                        .capacidad(c.getCapacidad())
-                                                                        .velocidad(c.getVelocidad())
-                                                                        .fechaInicio((Calendar) c.getFechaInicio()
-                                                                                        .clone())
-                                                                        .build()));
-                                                        List<Pedido> pedidosACO = new ArrayList<>(pedidos);
-                                                        List<Ruta> rutasACO = aco.planificar(flotaACO, pedidosACO);
-                                                        long endTimeACO = System.currentTimeMillis();
-                                                        pedidos.clear(); // Limpiar la lista de pedidos para la
-                                                                         // siguiente iteración
 
-                                                        guardarResultados("resultadosACO.txt",
-                                                                        endTimeACO - startTimeACO,
-                                                                        casosPruebaACO.combinacionACO[contadorACO]);
-                                                        resultadoNumero++;
-                                                        System.out.println(
-                                                                        "Resultados guardados en ACO hasta el momento: "
-                                                                                        + String.valueOf(
-                                                                                                        resultadoNumero));
+                                                        // --- Planificación con Ant Colony ---
+                                                        for (int i = 0; i < 32; i++) {
+                                                                aco.setParametrosACO(
+                                                                                casosPruebaACO.combinacionACO[i]
+                                                                                                .getAlpha(),
+                                                                                casosPruebaACO.combinacionACO[i]
+                                                                                                .getBeta(),
+                                                                                casosPruebaACO.combinacionACO[i]
+                                                                                                .getRho(),
+                                                                                casosPruebaACO.combinacionACO[i]
+                                                                                                .getNAnts(),
+                                                                                casosPruebaACO.combinacionACO[i]
+                                                                                                .getNIter()); // Iterar
+                                                                                                              // sobre
+                                                                                                              // las
+                                                                                                              // combinaciones
 
-                                                        if (contadorACO < 31) {
-                                                                contadorACO++;
-                                                        } else {
-                                                                contadorACO = 0;
+                                                                long startTimeACO = System.currentTimeMillis();
+                                                                // Crear copias para evitar efectos secundarios entre
+                                                                // algoritmos
+                                                                List<Camion> flotaACO = new ArrayList<>();
+                                                                flota.forEach(c -> flotaACO.add(Camion.builder()
+                                                                                .codigo(c.getCodigo())
+                                                                                .capacidad(c.getCapacidad())
+                                                                                .velocidad(c.getVelocidad())
+                                                                                .fechaInicio((Calendar) c
+                                                                                                .getFechaInicio()
+                                                                                                .clone())
+                                                                                .build()));
+                                                                List<Pedido> pedidosACO = new ArrayList<>(pedidos);
+                                                                List<Ruta> rutasACO = aco.planificar(flotaACO,
+                                                                                pedidosACO);
+                                                                long endTimeACO = System.currentTimeMillis();
+                                                                guardarResultadosACO("resultadosACO.txt",
+                                                                                endTimeACO - startTimeACO,
+                                                                                casosPruebaACO.combinacionACO[i]);
+                                                        }
+
+                                                        // --- Planificación con Genetic Algorithm ---
+                                                        for (int i = 0; i < 16; i++) {
+                                                                ag.setParametrosGA(
+                                                                                casosPruebaGA.combinacionGA[i]
+                                                                                                .getPopSize(),
+                                                                                casosPruebaGA.combinacionGA[i]
+                                                                                                .getNGenerations(),
+                                                                                casosPruebaGA.combinacionGA[i]
+                                                                                                .getCrossoverProb(),
+                                                                                casosPruebaGA.combinacionGA[i]
+                                                                                                .getMutationProb()); // Iterar
+                                                                                                                     // sobre
+                                                                                                                     // las
+                                                                                                                     // combinaciones
+
+                                                                long startTimeGA = System.currentTimeMillis();
+                                                                // Crear copias para evitar efectos secundarios entre
+                                                                // algoritmos
+                                                                List<Camion> flotaGA = new ArrayList<>();
+                                                                flota.forEach(c -> flotaGA.add(Camion.builder()
+                                                                                .codigo(c.getCodigo())
+                                                                                .capacidad(c.getCapacidad())
+                                                                                .velocidad(c.getVelocidad())
+                                                                                .fechaInicio((Calendar) c
+                                                                                                .getFechaInicio()
+                                                                                                .clone())
+                                                                                .build()));
+                                                                List<Pedido> pedidosGA = new ArrayList<>(pedidos);
+                                                                List<Ruta> rutasACO = ag.planificar(flotaGA,
+                                                                                pedidosGA);
+                                                                long endTimeGA = System.currentTimeMillis();
+                                                                guardarResultadosGA("resultadosGA.txt",
+                                                                                endTimeGA - startTimeGA,
+                                                                                casosPruebaGA.combinacionGA[i]);
+                                                        }
+
+                                                        pedidos.clear(); // Limpiar la lista de pedidos para el
+                                                                         // siguiente bloque de pedidos
+                                                        bloquesPedidos++;
+                                                        if (bloquesPedidos >= bloquesPedidosMaximo) {
+                                                                terminarExperimento = true; // Terminar el experimento
+                                                                break;
                                                         }
                                                 } else {
                                                         // Añadir el pedido a la lista
@@ -211,6 +262,9 @@ public class PruebasExperimentos {
                                                 System.err.println("Línea con formato incorrecto: " + linea);
                                         }
                                 }
+                                if (terminarExperimento)
+                                        break; // Terminar el experimento si se ha alcanzado alguna condición de
+                                               // parada
                         } catch (IOException e) {
                                 System.err.printf("Error al leer el archivo: %s\n", archivo.getName());
                         } catch (NumberFormatException e) {
@@ -219,9 +273,13 @@ public class PruebasExperimentos {
                 }
 
                 System.out.printf("Total de pedidos leídos: %d.\n", pedidosLeidos);
+                System.out.println(
+                                "Bloques de pedidos procesados: "
+                                                + String.valueOf(
+                                                                bloquesPedidos));
         }
 
-        public void guardarResultados(String ruta, Long resultados, CombinacionACO combinacion) {
+        public void guardarResultadosACO(String ruta, Long resultados, CombinacionACO combinacion) {
                 // --- Archivos donde escribir los resultados ---
                 String filepath = new File("").getAbsolutePath() + "\\data\\resultados\\" + ruta;
 
@@ -234,7 +292,23 @@ public class PruebasExperimentos {
                                         String.valueOf(combinacion.getBeta()) + "," +
                                         String.valueOf(combinacion.getRho()) + "," +
                                         String.valueOf(resultados) + "\n");
-                        System.out.println("File written successfully to " + archivoResultados.getAbsolutePath());
+                } catch (java.io.IOException e) {
+                        e.printStackTrace();
+                }
+        }
+
+        public void guardarResultadosGA(String ruta, Long resultados, CombinacionGA combinacion) {
+                // --- Archivos donde escribir los resultados ---
+                String filepath = new File("").getAbsolutePath() + "\\data\\resultados\\" + ruta;
+
+                File archivoResultados = new File(filepath);
+
+                try (BufferedWriter writer = new BufferedWriter(new FileWriter(archivoResultados, true))) {
+                        writer.write(String.valueOf(combinacion.getPopSize()) + ","
+                                        + String.valueOf(combinacion.getNGenerations()) + ","
+                                        + String.valueOf(combinacion.getCrossoverProb()) + ","
+                                        + String.valueOf(combinacion.getMutationProb()) + ","
+                                        + String.valueOf(resultados) + "\n");
                 } catch (java.io.IOException e) {
                         e.printStackTrace();
                 }
