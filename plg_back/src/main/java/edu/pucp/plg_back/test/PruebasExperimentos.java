@@ -99,12 +99,12 @@ public class PruebasExperimentos {
                 boolean terminarExperimento = false; // Variable para controlar el fin del experimento
 
                 // Eliminar archivos de resultados anteriores
-                String filepathDeleteACO = new File("").getAbsolutePath() + "\\data\\resultados\\resultadosACO.txt";
+                String filepathDeleteACO = new File("").getAbsolutePath() + "\\data\\resultados\\resultadosACO.csv";
                 File archivoResultadosDeleteACO = new File(filepathDeleteACO);
                 if (archivoResultadosDeleteACO.exists()) {
                         archivoResultadosDeleteACO.delete();
                 }
-                String filepathDeleteGA = new File("").getAbsolutePath() + "\\data\\resultados\\resultadosGA.txt";
+                String filepathDeleteGA = new File("").getAbsolutePath() + "\\data\\resultados\\resultadosGA.csv";
                 File archivoResultadosDeleteGA = new File(filepathDeleteGA);
                 if (archivoResultadosDeleteGA.exists()) {
                         archivoResultadosDeleteGA.delete();
@@ -203,7 +203,7 @@ public class PruebasExperimentos {
                                                                 List<Ruta> rutasACO = aco.planificar(flotaACO,
                                                                                 pedidosACO);
                                                                 long endTimeACO = System.currentTimeMillis();
-                                                                guardarResultadosACO("resultadosACO.txt",
+                                                                guardarResultadosACO("resultadosACO.csv",
                                                                                 endTimeACO - startTimeACO,
                                                                                 casosPruebaACO.combinacionACO[i]);
                                                         }
@@ -239,7 +239,7 @@ public class PruebasExperimentos {
                                                                 List<Ruta> rutasACO = ag.planificar(flotaGA,
                                                                                 pedidosGA);
                                                                 long endTimeGA = System.currentTimeMillis();
-                                                                guardarResultadosGA("resultadosGA.txt",
+                                                                guardarResultadosGA("resultadosGA.csv",
                                                                                 endTimeGA - startTimeGA,
                                                                                 casosPruebaGA.combinacionGA[i]);
                                                         }
