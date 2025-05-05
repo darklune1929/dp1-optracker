@@ -406,4 +406,12 @@ public class ACOPlanificador implements Planificador {
     // return l;
     // }
 
+    public void setParametrosACO(double alpha, double beta, double rho, int nAnts, int nIter) {
+        cfg.setAlpha(alpha);
+        cfg.setBeta(beta);
+        cfg.setRho(rho);
+        cfg.setNAnts(nAnts);
+        cfg.setNIter(nIter);
+    }
+
 }
