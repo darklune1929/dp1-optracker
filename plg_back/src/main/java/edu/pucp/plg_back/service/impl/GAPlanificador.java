@@ -11,6 +11,7 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.lang.Math;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +26,7 @@ public class GAPlanificador implements Planificador {
     private final Mapa mapa = new Mapa();
 
     @Override
-    public List<Ruta> planificar(List<Camion> camiones, List<Pedido> pedidos) {
+    public List<Ruta> planificar(List<Camion> camiones, List<Pedido> pedidos, List<Bloqueo> bloqueos) {
         // --- Add some example blockages to the map ---
         // mapa.setBloqueado(20, 20, true);
         // mapa.setBloqueado(21, 20, true);
@@ -36,7 +37,7 @@ public class GAPlanificador implements Planificador {
         List<Ruta> rutas = new ArrayList<>();
         buckets.forEach((c, lista) -> {
             if (!lista.isEmpty()) {
-                Ruta r = evolucionar(c, lista);
+                Ruta r = evolucionar(c, lista, bloqueos);
                 if (r != null)
                     rutas.add(r);
                 else
@@ -49,7 +50,7 @@ public class GAPlanificador implements Planificador {
     }
 
     /* ---------- GA-TSP para un único camión ---------- */
-    private Ruta evolucionar(Camion camion, List<Pedido> pedidos) {
+    private Ruta evolucionar(Camion camion, List<Pedido> pedidos, List<Bloqueo> bloqueos) {
         Nodo deposito = new Nodo(12, 8); // depósito central
 
         // map destination nodes to the list of orders at that location
@@ -101,7 +102,7 @@ public class GAPlanificador implements Planificador {
             pop.add(randomChromosome(n));
 
         // evaluar la población inicial
-        evaluar(pop, dist, nodos, pedidosPorDestino, camion);
+        evaluar(pop, dist, nodos, pedidosPorDestino, camion, bloqueos);
         pop.sort(); // ordenar por fitness
 
         /* --- ciclo evolutivo --- */
@@ -132,7 +133,7 @@ public class GAPlanificador implements Planificador {
             }
 
             // evaluar la nueva población
-            evaluar(next, dist, nodos, pedidosPorDestino, camion);
+            evaluar(next, dist, nodos, pedidosPorDestino, camion, bloqueos);
             next.sort();
             pop = next;
 
@@ -205,7 +206,7 @@ public class GAPlanificador implements Planificador {
 
     // evaluates the fitness of each chromosome in the population
     private void evaluar(Population pop, double[][] dist, List<Nodo> todos,
-            Map<Nodo, List<Pedido>> pedidosDestino, Camion camion) {
+            Map<Nodo, List<Pedido>> pedidosDestino, Camion camion, List<Bloqueo> bloqueos) {
 
         LocalDateTime startTime = camion.getFechaInicio() != null
                 ? camion.getFechaInicio().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
@@ -221,6 +222,21 @@ public class GAPlanificador implements Planificador {
             for (int i = 0; i < genes.size() - 1; i++) {
                 int fromIdx = genes.get(i);
                 int toIdx = genes.get(i + 1);
+
+                Nodo fromNodo = todos.get(fromIdx);
+                Nodo toNodo = todos.get(toIdx);
+
+                // Verificar si el tramo está bloqueado
+                for (Bloqueo bloqueo : bloqueos) {
+                    if (bloqueo.getFechaInicio().isBefore(startTime) && bloqueo.getFechaFin().isAfter(startTime)) {
+                        if (nodoEnTramoBloqueado(fromNodo, bloqueo) || nodoEnTramoBloqueado(toNodo, bloqueo)) {
+                            pathPossible = false; // El tramo está bloqueado
+                            break;
+                        }
+                    }
+                }
+
+                if (!pathPossible) break;
 
                 double segmentDist = dist[fromIdx][toIdx];
                 if (segmentDist == Double.MAX_VALUE) {
@@ -251,8 +267,7 @@ public class GAPlanificador implements Planificador {
                         }
                     }
                 }
-                if (!deadlinesMet)
-                    break; // Stop checking this chromosome if deadline missed
+                if (!deadlinesMet) break; // Stop checking this chromosome if deadline missed
             }
 
             // Assign fitness
@@ -430,4 +445,34 @@ public class GAPlanificador implements Planificador {
                         }));
         return map;
     }
+
+    private boolean enSegmento(Nodo p, Nodo q, Nodo r) {
+        // Verificar si el nodo q está alineado con el tramo en el eje X o Y
+        if (p.getX() == r.getX()) { // Segmento vertical
+            return q.getX() == p.getX() &&
+                   q.getY() >= Math.min(p.getY(), r.getY()) &&
+                   q.getY() <= Math.max(p.getY(), r.getY());
+        } else if (p.getY() == r.getY()) { // Segmento horizontal
+            return q.getY() == p.getY() &&
+                   q.getX() >= Math.min(p.getX(), r.getX()) &&
+                   q.getX() <= Math.max(p.getX(), r.getX());
+        }
+        return false; // No es un segmento válido (no debería ocurrir en este caso)
+    }
+
+    private boolean nodoEnTramoBloqueado(Nodo nodo, Bloqueo bloqueo) {
+        List<Nodo> tramo = bloqueo.getTramo();
+        for (int i = 0; i < tramo.size() - 1; i++) {
+            Nodo inicio = tramo.get(i);
+            Nodo fin = tramo.get(i + 1);
+    
+            // Verificar si el nodo está en el segmento actual
+            if (enSegmento(inicio, nodo, fin)) {
+                return true; // El nodo está en el tramo bloqueado
+            }
+        }
+        return false; // El nodo no está en ningún segmento del tramo
+    }
+
+
 }

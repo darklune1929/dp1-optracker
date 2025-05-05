@@ -1,12 +1,10 @@
 package edu.pucp.plg_back.model;
 
 import lombok.*;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Getter
@@ -35,8 +33,8 @@ public class Nodo implements Comparable<Nodo>, Serializable {
     @Builder.Default
     private boolean estaBloqueado = false;
 
-    private Date inicioBloqueo;
-    private Date finBloqueo;
+    private LocalDateTime inicioBloqueo;
+    private LocalDateTime finBloqueo;
 
     @Builder.Default
     private Nodo nodoprevio = null;
@@ -79,6 +77,7 @@ public class Nodo implements Comparable<Nodo>, Serializable {
         return Double.compare(this.f, v.getF());
     }
 
+    // se sobrescribe para comparar los valores de las coordenadas x e y
     @Override
     public boolean equals(Object obj) {
         if (this == obj)

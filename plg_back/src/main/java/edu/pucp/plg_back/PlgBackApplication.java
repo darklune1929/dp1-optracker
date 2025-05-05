@@ -1,9 +1,11 @@
 package edu.pucp.plg_back;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -11,11 +13,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 
+import edu.pucp.plg_back.model.Bloqueo;
 import edu.pucp.plg_back.model.Camion;
 import edu.pucp.plg_back.model.Pedido;
 import edu.pucp.plg_back.model.Ruta;
 // import edu.pucp.plg_back.service.Planificador; // Keep if needed elsewhere
 import edu.pucp.plg_back.service.impl.GAPlanificador;
+import edu.pucp.plg_back.service.fileReader.BloqueoService;
+import edu.pucp.plg_back.service.fileReader.MantenimientoService;
 import edu.pucp.plg_back.service.impl.ACOPlanificador;
 
 @SpringBootApplication(exclude = DataSourceAutoConfiguration.class)
@@ -35,6 +40,32 @@ public class PlgBackApplication {
 			System.out.println("======================================================");
 			System.out.println("Hora actual: " + now);
 
+
+			// Cargar bloqueos desde un archivo
+			BloqueoService bloqueoService = new BloqueoService();
+			bloqueoService.cargarBloqueos("C:\\Repositorios\\DP1\\dp1-optracker\\docs\\bloqueos\\202505.bloqueos.txt", "202505");
+			List<Bloqueo> bloqueos = bloqueoService.getBloqueos();
+			System.out.println("Total bloqueos: " + bloqueos.size());
+
+			// cargar plan de mantenimiento
+			MantenimientoService mantenimientoService = new MantenimientoService();
+			Map<String, LocalDate> camionesEnMantenimiento = mantenimientoService.cargarMantenimiento("C:\\Repositorios\\DP1\\dp1-optracker\\docs\\PlanMantenimiento\\planM.txt");
+
+			// Imprimir los camiones en mantenimiento
+			camionesEnMantenimiento.forEach((camion, fecha) -> {
+				System.out.printf("Camión: %s, Fecha de mantenimiento: %s\n", camion, fecha);
+			});
+
+			/*
+			bloqueos.forEach(bloqueo -> {
+				System.out.printf("Bloqueo: Periodo=%s, Tramo=%s\n",
+						bloqueo.getPeriodo(),
+						bloqueo.getTramo());
+				System.out.printf("Fecha inicio: %s, Fecha fin: %s\n",
+						bloqueo.getFechaInicio(),
+						bloqueo.getFechaFin());
+			}); 
+			
 			// --- Flota de Camiones (basado en QA.md Pregunta 4) ---
 			List<Camion> flota = new ArrayList<>();
 			// Set a start time for trucks (e.g., beginning of shift 8:00 AM)
@@ -130,6 +161,7 @@ public class PlgBackApplication {
 					p.getFechaPedido() != null ? p.getFechaPedido().toLocalTime() : "N/A",
 					p.getFechaLimiteEntrega() != null ? p.getFechaLimiteEntrega().toLocalTime() : "N/A"));
 
+
 			// --- Planificación con Ant Colony Optimization ---
 			System.out.println("\n======================================================");
 			System.out.println("=      EJECUTANDO ANT COLONY OPTIMIZATION (ACO)    =");
@@ -145,7 +177,7 @@ public class PlgBackApplication {
 					.build()));
 			List<Pedido> pedidosACO = new ArrayList<>(pedidos);
 
-			List<Ruta> rutasACO = aco.planificar(flotaACO, pedidosACO);
+			List<Ruta> rutasACO = aco.planificar(flotaACO, pedidosACO, bloqueos);
 			long endTimeACO = System.currentTimeMillis();
 
 			System.out.println("\n--- Resultados ACO ---");
@@ -158,6 +190,7 @@ public class PlgBackApplication {
 						r.getStartTime(), r.getEndTime(), r.getRuta() != null ? r.getRuta().size() : 0));
 			}
 
+			
 			// --- Planificación con Genetic Algorithm ---
 			System.out.println("\n======================================================");
 			System.out.println("=        EJECUTANDO GENETIC ALGORITHM (GA)         =");
@@ -173,7 +206,7 @@ public class PlgBackApplication {
 					.build()));
 			List<Pedido> pedidosGA = new ArrayList<>(pedidos);
 
-			List<Ruta> rutasGA = ag.planificar(flotaGA, pedidosGA);
+			List<Ruta> rutasGA = ag.planificar(flotaGA, pedidosGA, bloqueos);
 			long endTimeGA = System.currentTimeMillis();
 
 			System.out.println("\n--- Resultados GA ---");
@@ -189,6 +222,7 @@ public class PlgBackApplication {
 			System.out.println("\n======================================================");
 			System.out.println("=            DEMO PLANIFICACIÓN FINALIZADO           =");
 			System.out.println("======================================================");
+			*/
 		};
 	}
 

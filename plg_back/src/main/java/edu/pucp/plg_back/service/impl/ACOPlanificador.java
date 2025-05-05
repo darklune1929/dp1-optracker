@@ -30,7 +30,7 @@ public class ACOPlanificador implements Planificador {
 
     /** Planifica rutas para cada camión con ACO-TSP + A* + deadlines */
     @Override
-    public List<Ruta> planificar(List<Camion> camiones, List<Pedido> pedidos) {
+    public List<Ruta> planificar(List<Camion> camiones, List<Pedido> pedidos, List<Bloqueo> bloqueos) {
 
         // --- Add some example blockages to the map ---
         // mapa.setBloqueado(15, 15, true);
@@ -76,12 +76,12 @@ public class ACOPlanificador implements Planificador {
         if (n <= 1)
             return null; // no hay ruta que construir
 
-        // lista de todos los notos unicos
+        // lista de todos los nodos unicos
         List<Nodo> todos = new ArrayList<>();
         todos.add(deposito);
         todos.addAll(destinosUnicos);
 
-        // calculamos las distancias usando A*
+        // calculamos las distancias entre nodos(destinos) usando A*
         double[][] dist = new double[n][n];
         System.out.printf("Calculando las distancias A* para los nodos %d (Camion %s)...\n", n, camion.getCodigo());
         for (int i = 0; i < n; i++) {
@@ -114,7 +114,7 @@ public class ACOPlanificador implements Planificador {
         double initialFeromone = 1.0 / (n * n); // feromona inicial pequena
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                // evitat divisiones por cero o problemas con MAX_VALUE
+                // evitar divisiones por cero o problemas con MAX_VALUE
                 if (i != j && dist[i][j] != Double.MAX_VALUE)
                     tau[i][j] = initialFeromone;
                 else
@@ -372,6 +372,8 @@ public class ACOPlanificador implements Planificador {
         pedidos.sort(Comparator.comparing(Pedido::getFechaPedido,
                 Comparator.nullsFirst(Comparator.naturalOrder()))); // FCFS
 
+        // Creamos una lista de pedidos no asignados para considerarlos
+        // en las proximas asignaciones. Se comporta como una cola
         List<Pedido> pedidosNoAsignados = new ArrayList<>();
 
         for (Pedido p : pedidos) {

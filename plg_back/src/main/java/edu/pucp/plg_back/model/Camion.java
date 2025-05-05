@@ -5,6 +5,7 @@ import lombok.Setter;
 import lombok.NoArgsConstructor;
 
 import java.util.Calendar;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +26,9 @@ public class Camion {
     private double pesoTotal;
 
     private Calendar fechaInicio;
+
+    private LocalDateTime fechaMantenimiento;
+    private boolean en_mantenimiento; // true si el camion esta en mantenimiento
 
     @Builder.Default
     private List<Pedido> listaPedidos = new ArrayList<>();
